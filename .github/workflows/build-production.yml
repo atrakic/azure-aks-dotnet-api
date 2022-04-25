@@ -1,0 +1,54 @@
+name: Build and push the tagged build to production
+
+on:
+  push:
+    tags:
+      - 'v*'
+env:
+  STAGE: production
+  APP_NAME: dotnet-api
+  ACR_NAME: ${{ env.APP_NAME }}
+  AKS_NAME: ${{ env.APP_NAME }}
+  RESOURCE_GROUP_NAME: ${{ env.APP_NAME }}
+
+jobs:
+  build_push_image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build and Push production image
+        uses: docker/build-push-action@v1
+        with:
+          context: ./src
+          username: ${{ secrets.ACR_LOGIN }}
+          password: ${{ secrets.ACR_PASSWORD }}
+          registry: ${{ secrets.ACR_NAME }}
+          repository: ${{ env.APP_NAME }}
+          tag_with_ref: true
+          push: true
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_push_image
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Helm
+        uses: Azure/setup-helm@v1
+        with:
+          version: v3.8.1
+
+      # Service Principal Authentication - i.e., output of `az ad sp create-for-rbac --sdk-auth`
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS Credentials
+        uses: Azure/aks-set-context@v2.0
+        with:
+          resource-group: ${{ env.RESOURCE_GROUP_NAME }}
+          cluster-name: ${{ env.AKS_NAME }}
+
+      - name: Run Helm Deploy
+        run: ./scripts/deploy.sh ${{ env.APP_NAME }} ${{ env.DNS_NAME }} ${{ env.ACR_NAME }} ${{ env.STAGE }} ${GITHUB_REF##*/}
