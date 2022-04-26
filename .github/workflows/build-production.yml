@@ -1,15 +1,16 @@
-name: Build and push the tagged build to production
+name: Build and push the **tagged** build to production
 
 on:
   push:
     tags:
       - 'v*'
 env:
-  STAGE: production
-  APP_NAME: dotnet-api
-  ACR_NAME: ${{ env.APP_NAME }}
-  AKS_NAME: ${{ env.APP_NAME }}
-  RESOURCE_GROUP_NAME: ${{ env.APP_NAME }}
+  APP_NAME:               demo
+  CHART_NAME:             dotnet-api
+  REGISTRY_NAME:          my-acr-registry
+  CLUSTER_NAME:           my-aks-cluster
+  CLUSTER_RESOURCE_GROUP: my-resource-group
+  NAMESPACE:              ${{ env.APP_NAME }}-production
 
 jobs:
   build_push_image:
@@ -17,16 +18,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build and Push production image
-        uses: docker/build-push-action@v1
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      # Connect to Azure Container Registry (ACR)
+      - uses: azure/docker-login@v1
         with:
-          context: ./src
-          username: ${{ secrets.ACR_LOGIN }}
-          password: ${{ secrets.ACR_PASSWORD }}
-          registry: ${{ secrets.ACR_NAME }}
-          repository: ${{ env.APP_NAME }}
-          tag_with_ref: true
-          push: true
+          login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+    # Container build and push to a Azure Container Registry (ACR)
+    - run: |
+        docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.RELEASE_VERSION }}
+        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.RELEASE_VERSION }}
+      working-directory: ./src
 
   deploy:
     runs-on: ubuntu-latest
@@ -34,15 +40,26 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install Helm
-        uses: Azure/setup-helm@v1
-        with:
-          version: v3.8.1
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       # Service Principal Authentication - i.e., output of `az ad sp create-for-rbac --sdk-auth`
-      - uses: azure/login@v1
+      # Set the target Azure Kubernetes Service (AKS) cluster.
+      - uses: azure/aks-set-context@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: '${{ secrets.AZURE_CREDENTIALS }}'
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+
+      # Create image pull secret for ACR
+      - uses: azure/k8s-create-secret@v1
+        with:
+          container-registry-url: ${{ env.REGISTRY_NAME }}.azurecr.io
+          container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
+          container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+          secret-name: ${{ env.SECRET }}
+          namespace: ${{ env.NAMESPACE }}
+          arguments: --force true
 
       - name: Get AKS Credentials
         uses: Azure/aks-set-context@v2.0
@@ -50,5 +67,18 @@ jobs:
           resource-group: ${{ env.RESOURCE_GROUP_NAME }}
           cluster-name: ${{ env.AKS_NAME }}
 
-      - name: Run Helm Deploy
-        run: ./scripts/deploy.sh ${{ env.APP_NAME }} ${{ env.DNS_NAME }} ${{ env.ACR_NAME }} ${{ env.STAGE }} ${GITHUB_REF##*/}
+      - name: Install Helm
+        uses: Azure/setup-helm@v1
+
+      # https://docs.microsoft.com/en-us/azure/aks/http-application-routing
+      - name: Deploy app with Helm to AKS
+        run: |
+          ./scripts/deploy.sh "${{ env.CHART_NAME }}" "${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}" "${{ env.RELEASE_VERSION }}" \
+          --create-namespace --namespace ${{ env.NAMESPACE }} \
+          --set ingress.enabled=true \
+          --set ingress.annotations."kubernetes\.io/ingress\.class"=addon-http-application-routing \
+          --set ingress.annotations".nginx\.ingress\.kubernetes\.io/rewrite-target"=/\$1 \
+          --set "ingress.hosts[0].host=${{ env.DNS_NAME }},ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=ImplementationSpecific"
+
+      - name: List Helm deployments
+        run:  helm list -n ${{ env.NAMESPACE }}
