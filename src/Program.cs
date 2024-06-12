@@ -1,26 +1,21 @@
 using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
 builder.Services.AddHealthChecks();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddLogging();
 
 var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.MapHealthChecks("/healthz");
+app.UseMetricServer();
+app.UseHttpLogging();
+app.UseRouting();
+app.UseHttpMetrics();
 
 app.MapGet("/", () =>
 {
-    var version = Environment.GetEnvironmentVariable("VERSION") ?? "0.0.1";
-    return new ProgramMetadata(System.Net.Dns.GetHostName(), version);
-}).WithName("GetProgramMetadata");
+    var version = Environment.GetEnvironmentVariable("VERSION") ?? builder.Configuration["VERSION"];
+    return new Metadata(System.Net.Dns.GetHostName(), version);
+}).WithName("GetMetadata");
 
 app.MapGet("/users", () =>
 {
@@ -31,13 +26,7 @@ app.MapGet("/users", () =>
     return users;
 }).WithName("GetUsers");
 
-app.MapHealthChecks("/healthz");
-app.UseMetricServer();
-app.UseHttpLogging();
-app.UseRouting();
-app.UseHttpMetrics();
-
 app.Run();
 
-record ProgramMetadata(string Hostname, string Version){}
+record Metadata(string Hostname, string Version){}
 record User(string name){}
