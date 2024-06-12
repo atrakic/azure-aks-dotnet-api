@@ -1,18 +1,24 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+# https://mcr.microsoft.com/product/dotnet/sdk
+# https://mcr.microsoft.com/v2/dotnet/sdk/tags/list
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/nightly/sdk:8.0-jammy-aot AS build
+ARG TARGETARCH
 WORKDIR /source
 
 COPY src/*.csproj .
-RUN dotnet restore
+RUN dotnet restore -r linux-$TARGETARCH
 
 COPY src/. .
 RUN dotnet publish --no-restore -c Release -o /app
 
-FROM mcr.microsoft.com/dotnet/aspnet:6.0 as final
+RUN dotnet publish -r linux-$TARGETARCH --no-restore -o /app
+RUN rm /app/*.dbg /app/*.Development.json
+
+FROM mcr.microsoft.com/dotnet/nightly/runtime-deps:8.0.6-noble-chiseled-aot as final
 WORKDIR /app
 COPY --from=build /app .
 
 ENV PORT 3000
 EXPOSE ${PORT}
 
-USER 1000
-ENTRYPOINT ["dotnet", "demo-dotnet.dll"]
+USER $APP_UID
+ENTRYPOINT ["./demo-dotnet"]

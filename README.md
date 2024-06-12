@@ -1,5 +1,5 @@
 # azure-aks-dotnet-api-demo
-This repository demonstrates how to deploy .Net 6.0 application on Azure Kubernetes(AKS) from scratch.
+This repository demonstrates how to deploy .Net 8.0 application on Azure Kubernetes(AKS) from scratch.
 
 ## Requirements
 * Azure account

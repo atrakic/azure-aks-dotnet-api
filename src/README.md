@@ -1,0 +1,1 @@
+- Use [native AOT deployment](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/native-aot?view=aspnetcore-8.0)
