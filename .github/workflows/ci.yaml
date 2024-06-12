@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**.cs'
+      - '**.csproj'
+      - '**.sln'
+      - ".github/workflows/ci.yaml"
+  pull_request:
+    branches: [ main ]
+    paths:
+    - '**.cs'
+    - '**.csproj'
+    - '**.sln'
+    - ".github/workflows/ci.yaml"
+
+env:
+  DOTNET_VERSION: '6.x' # The .NET SDK version to use
+
+jobs:
+  ci:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    #if: ${{ github.actor != 'dependabot[bot]' }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest,windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --no-restore --verbosity normal

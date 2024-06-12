@@ -1,6 +1,6 @@
 #!/bin/bash
 
-APP=${1:-app_app_1}
+APP=${1:-app}
 PORT=3000
 IP_ADDRESS=0.0.0.0
 

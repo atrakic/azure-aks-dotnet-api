@@ -3,22 +3,22 @@ using Prometheus;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddHealthChecks();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
 app.MapGet("/", () =>
 {
-    const string version = "0.0.1";
+    var version = Environment.GetEnvironmentVariable("VERSION") ?? "0.0.1";
     return new ProgramMetadata(System.Net.Dns.GetHostName(), version);
 }).WithName("GetProgramMetadata");
 
@@ -31,6 +31,7 @@ app.MapGet("/users", () =>
     return users;
 }).WithName("GetUsers");
 
+app.MapHealthChecks("/healthz");
 app.UseMetricServer();
 app.UseHttpLogging();
 app.UseRouting();

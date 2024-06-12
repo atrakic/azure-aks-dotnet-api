@@ -1,9 +1,10 @@
-version: '3.4'
 services:
   app:
     build:
       context: .
+    container_name: app
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:3000
     ports:
-      - 3000:3000
+      - ${ASPNETCORE_HTTP_PORTS:-3000}:3000
