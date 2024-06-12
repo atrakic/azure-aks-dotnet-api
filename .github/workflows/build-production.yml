@@ -50,7 +50,7 @@ jobs:
 
       # Service Principal Authentication - i.e., output of `az ad sp create-for-rbac --sdk-auth`
       # Set the target Azure Kubernetes Service (AKS) cluster.
-      - uses: azure/aks-set-context@v1
+      - uses: azure/aks-set-context@v4
         with:
           creds: '${{ secrets.AZURE_CREDENTIALS }}'
           cluster-name: ${{ env.CLUSTER_NAME }}
@@ -67,7 +67,7 @@ jobs:
           arguments: --force true
 
       - name: Get AKS Credentials
-        uses: Azure/aks-set-context@v2.0
+        uses: Azure/aks-set-context@v4
         with:
           resource-group: ${{ env.RESOURCE_GROUP_NAME }}
           cluster-name: ${{ env.AKS_NAME }}
