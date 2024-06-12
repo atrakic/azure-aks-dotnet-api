@@ -4,6 +4,12 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 # User-specific files
+Brewfile.lock.json
+
+# dotenv files
+.env
+
+# User-specific files
 *.rsuser
 *.suo
 *.user
