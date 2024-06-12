@@ -57,7 +57,7 @@ jobs:
           resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
 
       # Create image pull secret for ACR
-      - uses: azure/k8s-create-secret@v1
+      - uses: azure/k8s-create-secret@v5
         with:
           container-registry-url: ${{ env.REGISTRY_NAME }}.azurecr.io
           container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
