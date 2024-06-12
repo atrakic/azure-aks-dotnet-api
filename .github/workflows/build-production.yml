@@ -1,16 +1,9 @@
-name: Build and push the **tagged** build to production
+name: Build and push *tagged* build to production
 
 on:
   push:
     tags:
       - 'v*.*.*'
-env:
-  APP_NAME:               demo
-  CHART_NAME:             dotnet-api
-  REGISTRY_NAME:          my-acr-registry
-  CLUSTER_NAME:           my-aks-cluster
-  CLUSTER_RESOURCE_GROUP: my-resource-group
-  NAMESPACE:              ${{ env.APP_NAME }}-production
 
 jobs:
   build_push_image:
@@ -19,8 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set common environment variables
+        id: common
+        run: cat ./.github/.env >> $GITHUB_ENV
+
       - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: |
+          echo "NAMESPACE=${{ env.APP_NAME }}-staging" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       # Connect to Azure Container Registry (ACR)
       - uses: azure/docker-login@v2
@@ -33,7 +32,7 @@ jobs:
       - run: |
          docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.RELEASE_VERSION }}
          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.RELEASE_VERSION }}
-        working-directory: ./src
+        #working-directory: ./src
 
       - name: Verify image
         run: docker image ls ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.RELEASE_VERSION }} --no-trunc
@@ -44,6 +43,10 @@ jobs:
     if: ${{ github.event_name != 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set common environment variables
+        id: common
+        run: cat ./.github/.env >> $GITHUB_ENV
 
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
