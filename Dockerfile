@@ -7,7 +7,7 @@ RUN dotnet restore
 COPY src/. .
 RUN dotnet publish --no-restore -c Release -o /app
 
-FROM mcr.microsoft.com/dotnet/aspnet:6.0 as final
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 as final
 WORKDIR /app
 COPY --from=build /app .
 
