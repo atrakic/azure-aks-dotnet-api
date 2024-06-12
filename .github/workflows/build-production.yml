@@ -18,7 +18,6 @@ jobs:
 
       - name: Set env
         run: |
-          echo "NAMESPACE=${{ env.APP_NAME }}-staging" >> $GITHUB_ENV
           echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       # Connect to Azure Container Registry (ACR)
@@ -49,7 +48,9 @@ jobs:
         run: cat ./.github/.env >> $GITHUB_ENV
 
       - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "NAMESPACE=${{ env.APP_NAME }}-production" >> $GITHUB_ENV
 
       # Service Principal Authentication - i.e., output of `az ad sp create-for-rbac --sdk-auth`
       # Set the target Azure Kubernetes Service (AKS) cluster.
