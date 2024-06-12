@@ -23,7 +23,7 @@ jobs:
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
       # Connect to Azure Container Registry (ACR)
-      - uses: azure/docker-login@v1
+      - uses: azure/docker-login@v2
         with:
           login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
           username: ${{ secrets.REGISTRY_USERNAME }}
