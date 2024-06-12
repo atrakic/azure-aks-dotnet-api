@@ -82,7 +82,7 @@ jobs:
           cluster-name: ${{ env.AKS_NAME }}
 
       - name: Install Helm
-        uses: Azure/setup-helm@v1
+        uses: Azure/setup-helm@v4
 
       # https://docs.microsoft.com/en-us/azure/aks/http-application-routing
       - name: Deploy app with Helm to AKS
