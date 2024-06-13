@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using DataSqlite;
 
 //var builder = WebApplication.CreateBuilder(args);
 var builder = WebApplication.CreateSlimBuilder(args);
@@ -23,25 +24,22 @@ app.MapGet("/", () =>
 
 app.MapGet("/users", () =>
 {
-    var users = new User[] {
-        new User("Guest"),
-        new User("Admin"),
-        new User("Manager")};
+    var users = SqliteGenerator.GenerateUsers();
     return users;
 }).WithName("GetUsers");
 
 app.Run();
 
-
 public record Metadata(string Hostname, string Version);
 public record User(string Name);
 
 // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/source-generation?pivots=dotnet-8-0
-
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.KebabCaseLower)]
 [JsonSerializable(typeof(Metadata))]
+[JsonSerializable(typeof(User))]
 [JsonSerializable(typeof(User[]))]
 [JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(IEnumerable<User>))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }
