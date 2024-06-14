@@ -43,7 +43,7 @@ jobs:
           docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.RELEASE_VERSION }}
           docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.RELEASE_VERSION }}
           docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:latest
-        #working-directory: ./src
+          #working-directory: ./src
 
       - name: Verify image
         run: docker image ls ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.RELEASE_VERSION }} --no-trunc
@@ -64,26 +64,24 @@ jobs:
           echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
           echo "NAMESPACE=${{ env.APP_NAME }}-staging" >> $GITHUB_ENV
 
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - uses: azure/aks-set-context@v4
         with:
-          creds: '${{ secrets.AZURE_CREDENTIALS }}'
           cluster-name: ${{ env.CLUSTER_NAME }}
           resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
 
-      - uses: azure/k8s-create-secret@v5
+      - name: Set imagePullSecret
+        uses: azure/k8s-create-secret@v5
+        id: create-secret
         with:
           container-registry-url: ${{ env.REGISTRY_NAME }}.azurecr.io
           container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
           container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
           secret-name: ${{ env.SECRET }}
           namespace: ${{ env.NAMESPACE }}
-          arguments: --force true
-
-      - name: Get AKS Credentials
-        uses: Azure/aks-set-context@v4
-        with:
-          resource-group: ${{ env.RESOURCE_GROUP_NAME }}
-          cluster-name: ${{ env.AKS_NAME }}
 
       - name: Install Helm
         uses: Azure/setup-helm@v4
@@ -95,7 +93,7 @@ jobs:
           --create-namespace --namespace ${{ env.NAMESPACE }} \
           --set ingress.enabled=true \
           --set ingress.annotations."kubernetes\.io/ingress\.class"=addon-http-application-routing \
-          --set ingress.annotations".nginx\.ingress\.kubernetes\.io/rewrite-target"=/\$1 \
+          --set ingress.annotations."nginx\.ingress\.kubernetes\.io/rewrite-target"=/\$1 \
           --set "ingress.hosts[0].host=${{ env.DNS_NAME }},ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=ImplementationSpecific"
 
       - name: List Helm deployments
