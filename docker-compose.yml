@@ -3,8 +3,29 @@ services:
     build:
       context: .
     container_name: app
+    restart: always
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:3000
     ports:
       - ${ASPNETCORE_HTTP_PORTS:-3000}:3000
+
+  healthcheck:
+    image: curlimages/curl:${CURL_VERSION:-latest}
+    container_name: healthcheck
+    restart: always
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          date;
+          curl -fsL $${URL};
+          echo;
+          sleep $${SLEEP};
+        done
+    environment:
+      - SLEEP=10
+      - URL=http://app:3000/healthz
+    depends_on:
+      app:
+        condition: service_started
