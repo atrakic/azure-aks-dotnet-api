@@ -1,6 +1,9 @@
 name: Docker build
 
 on:
+  push:
+    tags:
+      - '*'
   workflow_dispatch:
   workflow_run:
     workflows: ["ci"]
@@ -71,3 +74,9 @@ jobs:
       ### Create a PR comment with image tags and labels
       ### defaults to true
       # comment-enable: false
+
+# Example release pipeline trigger:
+#
+# TAG="v0.0.1"
+# git tag "$TAG" -m "Release version: $TAG"
+# git push origin --tags
