@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
-using DataSqlite;
+using DotnetApi.Data;
+using DotnetApi.Services;
 
-//var builder = WebApplication.CreateBuilder(args);
 var builder = WebApplication.CreateSlimBuilder(args);
 
 builder.Services.AddHealthChecks();
@@ -10,7 +10,10 @@ builder.Services.AddLogging();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
+    options.SerializerOptions.WriteIndented = true;
 });
+
+builder.Services.AddSingleton<IQuoteService, QuoteService>();
 
 var app = builder.Build();
 
@@ -18,23 +21,30 @@ app.MapHealthChecks("/healthz");
 
 app.MapGet("/", () =>
 {
-    var version = System.Environment.GetEnvironmentVariable("VERSION") ?? builder.Configuration["VERSION"];
+    var version = System.Environment.GetEnvironmentVariable("VERSION")
+        ?? builder.Configuration["VERSION"]
+        ?? "beta";
+
     return new Metadata(System.Net.Dns.GetHostName(), version);
-}).WithName("GetMetadata");
+});
 
 app.MapGet("/users", () =>
 {
-    var users = SqliteGenerator.GenerateUsers();
+    var users = UserGenerator.Generate();
     return users;
-}).WithName("GetUsers");
+});
+
+app.MapGet("/quote", async (IQuoteService quoteService) =>
+{
+    var quote = await quoteService.RandomQuote();
+    return Results.Json(quote);
+});
 
 app.Run();
 
 public record Metadata(string Hostname, string Version);
 public record User(string Name);
 
-// https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/source-generation?pivots=dotnet-8-0
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.KebabCaseLower)]
 [JsonSerializable(typeof(Metadata))]
 [JsonSerializable(typeof(User))]
 [JsonSerializable(typeof(User[]))]
@@ -43,3 +53,5 @@ public record User(string Name);
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }
+
+public partial class Program {}

@@ -11,4 +11,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.6" />
   </ItemGroup>
+
+   <ItemGroup>
+    <InternalsVisibleTo Include="IntegrationTests" />
+    <InternalsVisibleTo Include="UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+   <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
 </Project>

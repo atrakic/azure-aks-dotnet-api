@@ -2,21 +2,20 @@ using System;
 
 using Microsoft.Data.Sqlite;
 
-namespace DataSqlite;
+namespace DotnetApi.Data;
 
-public static class SqliteGenerator
+public static class UserGenerator
 {
-    public static IEnumerable<User> GenerateUsers()
+    public static IEnumerable<User> Generate()
     {
         // Using a name and a shared cache allows multiple connections to access the same
         // in-memory database
-        const string connectionString = "Data Source=InMemorySample;Mode=Memory;Cache=Shared";
+        const string connectionString = "Data Source=Users;Mode=Memory;Cache=Shared";
 
         // The in-memory database only persists while a connection is open to it. To manage
         // its lifetime, keep one open connection around for as long as you need it.
         using var connection = new SqliteConnection(connectionString);
         connection.Open();
-
 
         var createCommand = connection.CreateCommand();
         createCommand.CommandText = @"

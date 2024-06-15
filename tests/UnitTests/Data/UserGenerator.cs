@@ -1,16 +1,17 @@
 using Xunit;
 
-using DataSqlite;
+using DotnetApi.Data;
 
-namespace UnitTests
+
+namespace UnitTests.Data
 {
-    public class SqliteGeneratorTests
+    public class UserGeneratorTests
     {
         [Fact]
         public void GenerateSql_WhenCalled_ReturnsValidSql()
         {
             // Arrange
-            var users = SqliteGenerator.GenerateUsers();
+            var users = UserGenerator.Generate();
 
             // Act
 
