@@ -23,4 +23,4 @@ ENV PORT 3000
 EXPOSE ${PORT}
 
 USER $APP_UID
-ENTRYPOINT ["./demo-dotnet"]
+ENTRYPOINT ["./dotnetApi"]
