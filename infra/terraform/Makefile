@@ -18,6 +18,7 @@ test:
 	[ -f ./tests/test.sh ] && ./tests/test.sh || true
 
 clean:
+	$(MAKE) destroy || true
 	rm -rf .terraform *.tfstate
 
 -include include.mk
