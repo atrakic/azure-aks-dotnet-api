@@ -15,7 +15,7 @@ RUN rm /app/*.dbg /app/*.Development.json
 
 # https://mcr.microsoft.com/product/dotnet/runtime-deps
 # https://mcr.microsoft.com/v2/dotnet/runtime-deps/tags/list
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/nightly/runtime-deps:8.0.7-noble-chiseled-aot as final
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/nightly/runtime-deps:9.0.0-noble-chiseled-aot as final
 WORKDIR /app
 COPY --from=build /app .
 
