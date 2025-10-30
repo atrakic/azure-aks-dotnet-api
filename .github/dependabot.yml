@@ -16,9 +16,6 @@ updates:
       interval: weekly
     commit-message:
       prefix: "build"
-    labels:
-      - "type/build"
-      - "scope/dockerfile"
 
   - package-ecosystem: nuget
     directory: "/"
